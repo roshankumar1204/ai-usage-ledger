@@ -35,3 +35,12 @@ export const fetchEvents = async (): Promise<UsageEvent[]> => {
   const { data } = await api.get("/metrics/events");
   return data;
 };
+
+export const ingestFile = async (source: string, file: File) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  const { data } = await api.post(`/ingest/${source}`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return data;
+};

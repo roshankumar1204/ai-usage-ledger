@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { fetchActiveUsers, fetchCostByTool, fetchEvents } from "./api/client";
+import IngestPanel from "./IngestPanel";
 
 function App() {
   const { data: activeUsers, isLoading: usersLoading } = useQuery({
@@ -41,6 +42,8 @@ function App() {
           {new Date().toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })}
         </p>
       </header>
+
+      <IngestPanel />
 
       {/* Stat strip — hairline-divided, not cards */}
       <div className="grid grid-cols-3 mb-12">
