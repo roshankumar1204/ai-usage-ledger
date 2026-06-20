@@ -74,10 +74,10 @@ function App() {
               <CartesianGrid strokeDasharray="2 4" stroke="#E3E0D8" vertical={false} />
               <XAxis dataKey="tool" tick={{ fontFamily: "JetBrains Mono", fontSize: 12, fill: "#8A8578" }} axisLine={{ stroke: "#E3E0D8" }} tickLine={false} />
               <YAxis tick={{ fontFamily: "JetBrains Mono", fontSize: 12, fill: "#8A8578" }} axisLine={false} tickLine={false} />
-              <Tooltip
-                contentStyle={{ fontFamily: "JetBrains Mono", fontSize: 12, border: "1px solid #E3E0D8", borderRadius: 0 }}
-                formatter={(v: number) => [`$${v.toFixed(2)}`, "cost"]}
-              />
+             <Tooltip
+  contentStyle={{ fontFamily: "JetBrains Mono", fontSize: 12, border: "1px solid #E3E0D8", borderRadius: 0 }}
+  formatter={(v) => [`$${Number(v).toFixed(2)}`, "cost"]}
+/>
               <Bar dataKey="cost" fill="#14171A" radius={0} maxBarSize={48} />
             </BarChart>
           </ResponsiveContainer>
