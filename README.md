@@ -2,6 +2,10 @@
 
 A reconciliation pipeline for AI tool usage and spend across an organization. Pulls usage data from multiple AI vendors (ChatGPT, GitHub Copilot, Cursor) into one canonical event format, then surfaces clean, trustworthy metrics — solving for the real-world mess of incompatible schemas, duplicate deliveries, late-arriving billing data, and silent schema drift.
 
+## Live ingestion via UI
+
+Beyond the Swagger-only flow, the dashboard itself has an upload panel — one drop zone per vendor (ChatGPT `.json`, Copilot `.csv`, Cursor `.jsonl`). Selecting a file posts directly to `/ingest/{source}` and the dashboard's stats, chart, and ledger refresh automatically on success — no Swagger or curl needed for the demo.
+
 ## The problem
 
 Organizations using multiple AI tools end up with usage and cost data scattered across vendors, each with its own export format, billing cadence, and quirks. Getting one trustworthy number — "how much are we spending, on what, by whom" — means solving several hard problems at once:
@@ -16,7 +20,7 @@ Organizations using multiple AI tools end up with usage and cost data scattered 
 | Linking the same person across tools without guessing | `identity_resolver.py` only links a raw email to an Identity via an explicit, recorded `proof_type` — no fuzzy matching, no silent merging |
 | Different readers reporting different numbers for the same metric | Single FastAPI metrics layer (`/metrics/*`) is the only place "active users" / "cost by tool" are computed — dashboard and any future reader pull from the same source |
 
-**Deliberately out of scope for this demo** (would need infra disproportionate to the project): TLS interception on endpoints, browser-extension network tee-ing, fleet-wide deployment/MDM, corpus-scale LLM classification of conversation content.
+**Deliberately not built** (would need infra disproportionate to a demo, covered conceptually instead): TLS interception on endpoints, browser-extension network capture, fleet-wide deployment/MDM, corpus-scale LLM classification, generic auto-detection of unknown vendor schemas (the parsers here are intentionally vendor-specific — real schema auto-detection for an arbitrary, undocumented format is itself the open-ended problem this kind of system exists to solve, not a demo-scope add-on).
 
 ## Architecture
 
@@ -57,16 +61,11 @@ fixtures/<vendor>/        # captured sample payloads + committed output snapshot
 test_replay.py            # structural assertions + regression snapshots
 
 frontend/
-
-src/
-
-api/client.ts             # typed API client, no hardcoded URLs (env-driven)
-
-App.tsx                   # dashboard: stats, cost-by-tool chart, ledger table
-
-index.css                 # design tokens (Tailwind v4 @theme)
-
-
+    src/
+      api/client.ts             # typed API client, no hardcoded URLs (env-driven)
+      App.tsx                   # dashboard layout: stats, cost-by-tool chart, ledger table
+      IngestPanel.tsx           # file upload UI per vendor, wired to /ingest/{source}
+      index.css                 # design tokens (Tailwind v4 @theme)
 
 ## Tech stack
 
