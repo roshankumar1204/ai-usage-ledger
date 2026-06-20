@@ -4,3 +4,4 @@ sqlmodel
 psycopg2-binary
 pydantic
 python-dotenv
+python-multipart
