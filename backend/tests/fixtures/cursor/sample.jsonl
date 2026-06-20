@@ -1,0 +1,2 @@
+{"eventId": "cur_001", "actor": {"email": "bob@company.com"}, "product": "Cursor", "kind": "completion", "ts": 1750000000, "meta": {"tokens": 900, "cost": {"amount_cents": 60}}}
+{"eventId": "cur_002", "actor": {"email": "alice@company.com"}, "product": "Cursor", "kind": "completion", "ts": 1750003600, "meta": {"tokens": 1100, "cost": {"amount_cents": 80}}}

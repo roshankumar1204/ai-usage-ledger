@@ -1,0 +1,3 @@
+record_id,user,tool,action,timestamp,token_count,billed_amount
+cop_001,alice@company.com,GitHub Copilot,suggestion_accepted,2026-06-15T09:15:00Z,210,
+cop_002,carol@company.com,GitHub Copilot,suggestion_accepted,2026-06-15T09:45:00Z,180,0.05
