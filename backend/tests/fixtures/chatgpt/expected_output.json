@@ -1,0 +1,24 @@
+[
+  {
+    "dedup_key": "a0d842245915335c00bffec8b8811073a31af6032e24ac02e5e5ab322f803b3c",
+    "source": "chatgpt",
+    "user_email": "alice@company.com",
+    "tool_name": "gpt-4o",
+    "event_type": "chat_message",
+    "occurred_at": "2026-06-15 10:30:00+00:00",
+    "cost_cents": 42,
+    "tokens": 1450,
+    "raw_payload": "{\"id\": \"cgpt_001\", \"email\": \"alice@company.com\", \"model\": \"gpt-4o\", \"type\": \"chat_message\", \"created\": \"2026-06-15T10:30:00Z\", \"usage\": {\"total_tokens\": 1450}, \"cost_usd\": 0.42}"
+  },
+  {
+    "dedup_key": "2b091da818e510827197df716ffdb4593f184049b39a4a7b27f58812b6274c73",
+    "source": "chatgpt",
+    "user_email": "bob@company.com",
+    "tool_name": "gpt-4o-mini",
+    "event_type": "chat_message",
+    "occurred_at": "2026-06-15 11:00:00+00:00",
+    "cost_cents": null,
+    "tokens": 320,
+    "raw_payload": "{\"id\": \"cgpt_002\", \"email\": \"bob@company.com\", \"model\": \"gpt-4o-mini\", \"type\": \"chat_message\", \"created\": \"2026-06-15T11:00:00Z\", \"usage\": {\"total_tokens\": 320}, \"cost_usd\": null}"
+  }
+]

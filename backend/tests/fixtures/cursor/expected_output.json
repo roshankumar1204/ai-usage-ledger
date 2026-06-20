@@ -1,0 +1,24 @@
+[
+  {
+    "dedup_key": "5c4deaed085825092e24f3718378964e62e84a3a728fbf15ea6e8dc14486588b",
+    "source": "cursor",
+    "user_email": "bob@company.com",
+    "tool_name": "Cursor",
+    "event_type": "completion",
+    "occurred_at": "2025-06-15 20:36:40",
+    "cost_cents": 60,
+    "tokens": 900,
+    "raw_payload": "{\"eventId\": \"cur_001\", \"actor\": {\"email\": \"bob@company.com\"}, \"product\": \"Cursor\", \"kind\": \"completion\", \"ts\": 1750000000, \"meta\": {\"tokens\": 900, \"cost\": {\"amount_cents\": 60}}}"
+  },
+  {
+    "dedup_key": "e559594179dfd45661087fa1c3555f1f43c51e9d865cc29062887d1bc86638b6",
+    "source": "cursor",
+    "user_email": "alice@company.com",
+    "tool_name": "Cursor",
+    "event_type": "completion",
+    "occurred_at": "2025-06-15 21:36:40",
+    "cost_cents": 80,
+    "tokens": 1100,
+    "raw_payload": "{\"eventId\": \"cur_002\", \"actor\": {\"email\": \"alice@company.com\"}, \"product\": \"Cursor\", \"kind\": \"completion\", \"ts\": 1750003600, \"meta\": {\"tokens\": 1100, \"cost\": {\"amount_cents\": 80}}}"
+  }
+]

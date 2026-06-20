@@ -1,0 +1,24 @@
+[
+  {
+    "dedup_key": "dd98ed053d2ea29eea5ad495443d38142905862b7bd281c90aa2ca10408e195c",
+    "source": "copilot",
+    "user_email": "alice@company.com",
+    "tool_name": "GitHub Copilot",
+    "event_type": "suggestion_accepted",
+    "occurred_at": "2026-06-15 09:15:00+00:00",
+    "cost_cents": null,
+    "tokens": 210,
+    "raw_payload": "{'record_id': 'cop_001', 'user': 'alice@company.com', 'tool': 'GitHub Copilot', 'action': 'suggestion_accepted', 'timestamp': '2026-06-15T09:15:00Z', 'token_count': '210', 'billed_amount': ''}"
+  },
+  {
+    "dedup_key": "25c8d5661b691ccde2a932878cf2caf895a2f569606134a32ef1f8dab6b5b1ce",
+    "source": "copilot",
+    "user_email": "carol@company.com",
+    "tool_name": "GitHub Copilot",
+    "event_type": "suggestion_accepted",
+    "occurred_at": "2026-06-15 09:45:00+00:00",
+    "cost_cents": 5,
+    "tokens": 180,
+    "raw_payload": "{'record_id': 'cop_002', 'user': 'carol@company.com', 'tool': 'GitHub Copilot', 'action': 'suggestion_accepted', 'timestamp': '2026-06-15T09:45:00Z', 'token_count': '180', 'billed_amount': '0.05'}"
+  }
+]
