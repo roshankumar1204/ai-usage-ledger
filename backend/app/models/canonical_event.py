@@ -7,6 +7,7 @@ class AIUsageEvent(SQLModel, table=True):
     dedup_key: str = Field(index=True, unique=True)   # source + raw_event_id hash
     source: str                                         # "chatgpt" | "copilot" | "cursor"
     user_email: str
+    identity_status: Optional[str] = None
     tool_name: str
     event_type: str                                     # "message" | "completion" | "session"
     occurred_at: datetime

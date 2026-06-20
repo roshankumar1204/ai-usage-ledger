@@ -1,6 +1,8 @@
 from sqlmodel import Session, select
 from app.models.canonical_event import AIUsageEvent
 from app.parsers import chatgpt_enterprise, copilot_export, cursor_jsonl
+from app.identity_resolver import resolve_identity
+
 
 PARSERS = {
     "chatgpt": chatgpt_enterprise.parse,
@@ -16,6 +18,8 @@ def ingest_batch(source: str, raw_text: str, session: Session) -> dict:
     inserted, updated = 0, 0
 
     for ev in events:
+        identity_result = resolve_identity(ev["user_email"], source, session)
+        ev["identity_status"] = identity_result["status"]
         existing = session.exec(
             select(AIUsageEvent).where(AIUsageEvent.dedup_key == ev["dedup_key"])
         ).first()
