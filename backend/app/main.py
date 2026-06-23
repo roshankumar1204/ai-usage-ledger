@@ -66,6 +66,6 @@ def list_events(session: Session = Depends(get_session)):
     stmt = select(AIUsageEvent).order_by(AIUsageEvent.occurred_at.desc()).limit(50)
     return session.exec(stmt).all()
 
-@app.get("/health")
-def health():
+@app.get("/status")
+def status_check():
     return {"status": "ok"}

@@ -47,7 +47,7 @@ export const ingestFile = async (source: string, file: File) => {
 
 export const checkHealth = async (): Promise<boolean> => {
   try {
-    await api.get("/health", { timeout: 5000 });
+    await api.get("/status", { timeout: 5000 });
     return true;
   } catch {
     return false;
