@@ -3,8 +3,11 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { fetchActiveUsers, fetchCostByTool, fetchEvents } from "./api/client";
 import IngestPanel from "./IngestPanel";
 import ColdStartBanner from "./ColdStartBanner";
+import { useState } from "react";
 
 function App() {
+  const [search, setSearch] = useState("");
+
   const { data: activeUsers, isLoading: usersLoading } = useQuery({
     queryKey: ["active-users"],
     queryFn: fetchActiveUsers,
@@ -26,6 +29,15 @@ function App() {
   }));
 
   const vendorCount = costByTool ? new Set(costByTool.map((c) => c.tool)).size : 0;
+
+  const filteredEvents = events?.filter((e) => {
+    const q = search.toLowerCase();
+    return (
+      e.user_email.toLowerCase().includes(q) ||
+      e.tool_name.toLowerCase().includes(q) ||
+      e.source.toLowerCase().includes(q)
+    );
+  });
 
   return (
     <div className="min-h-screen px-10 py-12 max-w-5xl mx-auto">
@@ -99,58 +111,72 @@ function App() {
 
       {/* Ledger table */}
       <section>
-        <h2 className="text-sm uppercase tracking-wide text-mute mb-4 border-b border-line pb-2">
-          Ledger
-        </h2>
+        <div className="flex items-center justify-between border-b border-line pb-2 mb-4">
+          <h2 className="text-sm uppercase tracking-wide text-mute">Ledger</h2>
+          <input
+            type="text"
+            placeholder="search user, tool, or source…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="font-mono text-xs border border-line px-2 py-1 w-56 outline-none focus:border-ink"
+          />
+        </div>
         {eventsLoading ? (
           <p className="font-mono text-sm text-mute">loading…</p>
         ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-xs uppercase tracking-wide text-mute border-b border-line">
-                <th className="py-2 font-normal">User</th>
-                <th className="font-normal">Tool</th>
-                <th className="font-normal">Source</th>
-                <th className="font-normal text-right">Cost</th>
-                <th className="font-normal">Identity</th>
-                <th className="font-normal text-right">Recorded</th>
-              </tr>
-            </thead>
-            <tbody className="font-mono text-xs">
-              {events?.map((e) => (
-                <tr key={e.id} className="border-b border-line/60 hover:bg-black/[0.02]">
-                  <td className="py-3">{e.user_email}</td>
-                  <td>{e.tool_name}</td>
-                  <td>
-                    <span className="text-mute">{e.source}</span>
-                  </td>
-                  <td className="text-right">
-                    {e.cost_cents !== null ? (
-                      `$${(e.cost_cents / 100).toFixed(2)}`
-                    ) : (
-                      <span className="text-pending">pending</span>
-                    )}
-                  </td>
-                  <td>
-                    <span className="inline-flex items-center gap-1.5">
-                      <span
-                        className="w-1.5 h-1.5 rounded-full"
-                        style={{ backgroundColor: e.identity_status === "resolved" ? "#1F6F54" : "#B8860B" }}
-                      />
-                      <span style={{ color: e.identity_status === "resolved" ? "#1F6F54" : "#B8860B" }}>
-                        {e.identity_status === "resolved" ? "PROVEN" : "UNRESOLVED"}
-                      </span>
-                    </span>
-                  </td>
-                  <td className="text-right text-mute">
-                    {new Date(e.occurred_at).toLocaleString(undefined, {
-                      month: "short", day: "numeric", hour: "2-digit", minute: "2-digit"
-                    })}
-                  </td>
+          <>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-xs uppercase tracking-wide text-mute border-b border-line">
+                  <th className="py-2 font-normal">User</th>
+                  <th className="font-normal">Tool</th>
+                  <th className="font-normal">Source</th>
+                  <th className="font-normal text-right">Cost</th>
+                  <th className="font-normal">Identity</th>
+                  <th className="font-normal text-right">Recorded</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="font-mono text-xs">
+                {filteredEvents?.map((e) => (
+                  <tr key={e.id} className="border-b border-line/60 hover:bg-black/[0.02]">
+                    <td className="py-3">{e.user_email}</td>
+                    <td>{e.tool_name}</td>
+                    <td>
+                      <span className="text-mute">{e.source}</span>
+                    </td>
+                    <td className="text-right">
+                      {e.cost_cents !== null ? (
+                        `$${(e.cost_cents / 100).toFixed(2)}`
+                      ) : (
+                        <span className="text-pending">pending</span>
+                      )}
+                    </td>
+                    <td>
+                      <span className="inline-flex items-center gap-1.5">
+                        <span
+                          className="w-1.5 h-1.5 rounded-full"
+                          style={{ backgroundColor: e.identity_status === "resolved" ? "#1F6F54" : "#B8860B" }}
+                        />
+                        <span style={{ color: e.identity_status === "resolved" ? "#1F6F54" : "#B8860B" }}>
+                          {e.identity_status === "resolved" ? "PROVEN" : "UNRESOLVED"}
+                        </span>
+                      </span>
+                    </td>
+                    <td className="text-right text-mute">
+                      {new Date(e.occurred_at).toLocaleString(undefined, {
+                        month: "short", day: "numeric", hour: "2-digit", minute: "2-digit"
+                      })}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {filteredEvents?.length === 0 && (
+              <p className="font-mono text-xs text-mute py-6 text-center">
+                No matching events.
+              </p>
+            )}
+          </>
         )}
       </section>
     </div>
