@@ -4,6 +4,8 @@ import { fetchActiveUsers, fetchCostByTool, fetchEvents } from "./api/client";
 import IngestPanel from "./IngestPanel";
 import ColdStartBanner from "./ColdStartBanner";
 import { useState } from "react";
+import HowItWorks from "./HowItWorks";
+import DriftDemo from "./DriftDemo";
 
 function App() {
   const [search, setSearch] = useState("");
@@ -56,18 +58,20 @@ function App() {
           {new Date().toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })}
         </p>
       </header>
-
-      <section className="mb-12 pb-8 border-b border-line">
-        <h2 className="font-display text-xl font-semibold mb-2 max-w-2xl">
-          One trustworthy number for what your org actually spends on AI.
-        </h2>
-        <p className="text-sm text-mute max-w-xl">
-          A working pipeline that ingests usage data from multiple AI tools, removes
-          duplicates, catches it when a vendor silently changes their data format, and
-          resolves identities only when it can prove them.
-        </p>
-      </section>
-
+<section className="mb-12 pb-8 border-b border-line">
+  <p className="font-mono text-xs text-verified uppercase tracking-wide mb-3">
+    ● live demo — real backend, real data
+  </p>
+  <h2 className="font-display text-2xl font-semibold mb-3 max-w-2xl leading-snug">
+    One trustworthy number for what your org actually spends on AI.
+  </h2>
+  <p className="text-sm text-mute max-w-xl leading-relaxed">
+    A working pipeline that ingests usage data from multiple AI tools, removes
+    duplicates, catches it when a vendor silently changes their data format, and
+    resolves identities only when it can prove them.
+  </p>
+</section>
+     <DriftDemo />
       <IngestPanel />
 
       {/* Stat strip — hairline-divided, not cards */}
@@ -179,7 +183,11 @@ function App() {
           </>
         )}
       </section>
+      <div className="mt-12">
+      <HowItWorks/>
+      </div>
     </div>
+    
   );
 }
 
