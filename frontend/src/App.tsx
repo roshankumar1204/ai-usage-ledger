@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { fetchActiveUsers, fetchCostByTool, fetchEvents } from "./api/client";
 import IngestPanel from "./IngestPanel";
+import ColdStartBanner from "./ColdStartBanner";
 
 function App() {
   const { data: activeUsers, isLoading: usersLoading } = useQuery({
@@ -29,6 +30,7 @@ function App() {
   return (
     <div className="min-h-screen px-10 py-12 max-w-5xl mx-auto">
       {/* Masthead */}
+      <ColdStartBanner />
       <header className="flex items-baseline justify-between border-b border-line pb-6 mb-10">
         <div>
           <h1 className="font-display text-3xl font-semibold tracking-tight">
@@ -42,6 +44,17 @@ function App() {
           {new Date().toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })}
         </p>
       </header>
+
+      <section className="mb-12 pb-8 border-b border-line">
+        <h2 className="font-display text-xl font-semibold mb-2 max-w-2xl">
+          One trustworthy number for what your org actually spends on AI.
+        </h2>
+        <p className="text-sm text-mute max-w-xl">
+          A working pipeline that ingests usage data from multiple AI tools, removes
+          duplicates, catches it when a vendor silently changes their data format, and
+          resolves identities only when it can prove them.
+        </p>
+      </section>
 
       <IngestPanel />
 
@@ -74,10 +87,10 @@ function App() {
               <CartesianGrid strokeDasharray="2 4" stroke="#E3E0D8" vertical={false} />
               <XAxis dataKey="tool" tick={{ fontFamily: "JetBrains Mono", fontSize: 12, fill: "#8A8578" }} axisLine={{ stroke: "#E3E0D8" }} tickLine={false} />
               <YAxis tick={{ fontFamily: "JetBrains Mono", fontSize: 12, fill: "#8A8578" }} axisLine={false} tickLine={false} />
-             <Tooltip
-  contentStyle={{ fontFamily: "JetBrains Mono", fontSize: 12, border: "1px solid #E3E0D8", borderRadius: 0 }}
-  formatter={(v) => [`$${Number(v).toFixed(2)}`, "cost"]}
-/>
+              <Tooltip
+                contentStyle={{ fontFamily: "JetBrains Mono", fontSize: 12, border: "1px solid #E3E0D8", borderRadius: 0 }}
+                formatter={(v) => [`$${Number(v).toFixed(2)}`, "cost"]}
+              />
               <Bar dataKey="cost" fill="#14171A" radius={0} maxBarSize={48} />
             </BarChart>
           </ResponsiveContainer>

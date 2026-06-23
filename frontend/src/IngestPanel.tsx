@@ -19,9 +19,44 @@ function IngestPanel() {
   const [loading, setLoading] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
-  const handleUpload = async (source: string, file: File) => {
-    setLoading(source);
-    try {
+  const validateFile = async (source: string, file: File): Promise<string | null> => {
+  const text = await file.text();
+  try {
+    if (source === "chatgpt") {
+      const parsed = JSON.parse(text);
+      if (!Array.isArray(parsed) || !parsed[0]?.id || !parsed[0]?.email || !parsed[0]?.model) {
+        return "Doesn't look like a ChatGPT export (expected id/email/model fields)";
+      }
+    } else if (source === "copilot") {
+      const firstLine = text.split("\n")[0];
+      if (!firstLine.includes("record_id") || !firstLine.includes("user")) {
+        return "Doesn't look like a Copilot CSV export (missing expected columns)";
+      }
+    } else if (source === "cursor") {
+      const firstLine = text.trim().split("\n")[0];
+      const parsed = JSON.parse(firstLine);
+      if (!parsed.eventId || !parsed.actor) {
+        return "Doesn't look like a Cursor JSONL export (missing eventId/actor)";
+      }
+    }
+    return null;
+  } catch {
+    return "Couldn't parse this file — check it matches the expected format";
+  }
+};
+
+ const handleUpload = async (source: string, file: File) => {
+  const validationError = await validateFile(source, file);
+  if (validationError) {
+    setResults((prev) => ({
+      ...prev,
+      [source]: { source, status: "error", message: validationError },
+    }));
+    return;
+  }
+
+  setLoading(source);
+  try {
       const data = await ingestFile(source, file);
       const driftNote = data.drift?.status === "DRIFT_DETECTED" ? " — drift detected" : "";
       setResults((prev) => ({

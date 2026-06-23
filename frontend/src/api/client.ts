@@ -44,3 +44,12 @@ export const ingestFile = async (source: string, file: File) => {
   });
   return data;
 };
+
+export const checkHealth = async (): Promise<boolean> => {
+  try {
+    await api.get("/health", { timeout: 5000 });
+    return true;
+  } catch {
+    return false;
+  }
+};
