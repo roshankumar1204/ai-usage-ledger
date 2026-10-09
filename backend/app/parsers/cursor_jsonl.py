@@ -1,5 +1,5 @@
 import json, hashlib
-from datetime import datetime
+from datetime import datetime, timezone
 
 def parse(raw_text: str) -> list[dict]:
     events = []
@@ -12,7 +12,7 @@ def parse(raw_text: str) -> list[dict]:
             "user_email": r["actor"]["email"],
             "tool_name": r["product"],
             "event_type": r["kind"],
-            "occurred_at": datetime.fromtimestamp(r["ts"]),
+            "occurred_at": datetime.fromtimestamp(r["ts"], tz=timezone.utc),
             "cost_cents": r["meta"]["cost"]["amount_cents"],
             "tokens": r["meta"]["tokens"],
             "raw_payload": json.dumps(r),
