@@ -6,9 +6,6 @@ function ColdStartBanner() {
   const [seconds, setSeconds] = useState(0);
 
   useEffect(() => {
-    let pingInterval: ReturnType<typeof setInterval>;
-    let clock: ReturnType<typeof setInterval>;
-
     const ping = async () => {
       const ok = await checkHealth();
       if (ok) {
@@ -18,9 +15,9 @@ function ColdStartBanner() {
       }
     };
 
+    const pingInterval = setInterval(ping, 2500);
+    const clock = setInterval(() => setSeconds((s) => s + 1), 1000);
     ping();
-    pingInterval = setInterval(ping, 2500);
-    clock = setInterval(() => setSeconds((s) => s + 1), 1000);
 
     return () => {
       clearInterval(pingInterval);

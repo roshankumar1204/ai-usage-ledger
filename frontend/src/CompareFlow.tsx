@@ -16,6 +16,13 @@ const TOOLS = [
 ];
 
 type Step = "pick" | "upload" | "manual" | "report";
+const STEP_NUMBER: Record<Step, number> = { pick: 1, upload: 2, manual: 2, report: 3 };
+const STEP_LABEL: Record<Step, string> = {
+  pick: "Which AI tool is this bill for?",
+  upload: "Add your bill",
+  manual: "Tell us your plan",
+  report: "Your report",
+};
 type Result = { kind: "bill"; data: BillResult } | { kind: "manual"; data: ManualResult };
 
 function CompareFlow() {
@@ -40,7 +47,7 @@ function CompareFlow() {
     try {
       setResult(await action());
       setStep("report");
-      for (const key of ["team", "bills", "manual-compares", "events", "cost-by-tool", "active-users"]) {
+      for (const key of ["team", "bills", "manual-compares"]) {
         queryClient.invalidateQueries({ queryKey: [key] });
       }
     } catch (err) {
@@ -67,29 +74,24 @@ function CompareFlow() {
   const planName = (id: string) => catalog?.plans.find((p) => p.id === id)?.product ?? id;
 
   return (
-    <section className="mb-14">
-      <div className="flex flex-wrap items-baseline justify-between gap-3 border-b border-line pb-2 mb-6">
-        <h2 className="text-sm uppercase tracking-wide text-mute">Compare your AI bill</h2>
-        <div className="flex flex-wrap items-baseline gap-4 font-mono text-xs text-mute">
+    <section>
+      <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 border-b border-line pb-3 mb-6">
+        <p className="font-mono text-xs">
+          <span className="text-mute">Step {STEP_NUMBER[step]} of 3 ·</span> {STEP_LABEL[step]}
+        </p>
+        <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 font-mono text-xs text-mute">
           {quota && quota.switches > 0 && (
-            <span className="text-verified">saving {money(quota.monthly_savings_cents)}/month across {quota.switches} switch{quota.switches > 1 ? "es" : ""}</span>
+            <span className="text-verified">saving {money(quota.monthly_savings_cents)}/mo</span>
           )}
-          {quota && <span>{quota.plan === "paid" ? "Pro · unlimited" : `${quota.remaining} of ${quota.free_limit} free analyses left`}</span>}
+          {quota && <span>{quota.plan === "paid" ? "Pro · unlimited" : `${quota.remaining}/${quota.free_limit} free left`}</span>}
           <button onClick={share} className="underline hover:text-ink" title="Anyone with this link can see your team's bills">
-            {copied ? "link copied ✓" : "share with your team"}
+            {copied ? "link copied ✓" : "share with team"}
           </button>
         </div>
       </div>
 
-      <ol className="flex gap-6 font-mono text-xs mb-8">
-        {(["Pick your tool", "Add your bill", "See your report"]).map((label, i) => {
-          const active = (step === "pick" && i === 0) || ((step === "upload" || step === "manual") && i === 1) || (step === "report" && i === 2);
-          return <li key={label} className={active ? "text-ink" : "text-mute"}>{i + 1}. {label}</li>;
-        })}
-      </ol>
-
       {step === "pick" && (
-        <div className="grid md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {TOOLS.map((t) => (
             <button
               key={t.key}
@@ -163,8 +165,8 @@ function CompareFlow() {
 
       {step === "report" && result && (
         <div>
-          <div className="flex items-baseline justify-between mb-6">
-            <p className="font-mono text-xs text-mute">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+            <p className="font-mono text-xs text-mute break-all">
               {result.kind === "bill"
                 ? `${result.data.bill.filename} · ${result.data.report.period_days} day(s) · ${result.data.bill.event_count} events`
                 : `${planName(result.data.manual.plan_id)} · ${result.data.manual.seats} seats`}
@@ -184,7 +186,7 @@ function CompareFlow() {
               switchRecord={result.data.switch}
             >
               <div className="grid grid-cols-2 md:grid-cols-4 mb-10 gap-y-6">
-                <Stat label="Current spend / month" value={money(result.data.comparison.current_monthly_cents)}
+                <Stat label="Spend / month" value={money(result.data.comparison.current_monthly_cents)}
                   note={result.data.comparison.current_basis === "entered" ? "as you entered it" : "estimated from list price"} />
                 <Stat label="Seats" value={String(result.data.manual.seats)} note={planName(result.data.manual.plan_id)} />
               </div>

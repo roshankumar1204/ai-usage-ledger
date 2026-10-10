@@ -4,47 +4,6 @@ export const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
 });
 
-export interface CostByTool {
-  tool: string;
-  cost_cents: number;
-}
-
-export interface UsageEvent {
-  id: number;
-  source: string;
-  user_email: string;
-  tool_name: string;
-  event_type: string;
-  occurred_at: string;
-  cost_cents: number | null;
-  tokens: number;
-  identity_status: string | null;
-}
-
-export const fetchActiveUsers = async (): Promise<number> => {
-  const { data } = await api.get("/metrics/active-users");
-  return data.active_users_this_week;
-};
-
-export const fetchCostByTool = async (): Promise<CostByTool[]> => {
-  const { data } = await api.get("/metrics/cost-by-tool");
-  return data;
-};
-
-export const fetchEvents = async (): Promise<UsageEvent[]> => {
-  const { data } = await api.get("/metrics/events");
-  return data;
-};
-
-export const ingestFile = async (source: string, file: File) => {
-  const formData = new FormData();
-  formData.append("file", file);
-  const { data } = await api.post(`/ingest/${source}`, formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
-  return data;
-};
-
 export const checkHealth = async (): Promise<boolean> => {
   try {
     await api.get("/status", { timeout: 5000 });
@@ -53,7 +12,7 @@ export const checkHealth = async (): Promise<boolean> => {
     return false;
   }
 };
-// ---------- Bill compare (Phase 1) ----------
+
 
 // No accounts yet: each browser gets a random team id that scopes its bills and free quota.
 // Opening a share link (?team=<id>) joins that team on this device.
@@ -265,6 +224,8 @@ export const uploadSampleBill = async (source: string): Promise<BillResult> => {
 // FastAPI puts errors in `detail`, either a string or {code, message}
 export const apiErrorMessage = (err: unknown): string => {
   const detail = axios.isAxiosError(err) ? err.response?.data?.detail : undefined;
+  // FastAPI's own 404 for a route that doesn't exist: the backend is older than this frontend
+  if (detail === "Not Found") return "The server is running an older version and doesn't support this yet. Redeploy the backend from main.";
   if (typeof detail === "string") return detail;
   if (detail?.message) return detail.message;
   return err instanceof Error ? err.message : "Something went wrong";

@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { apiErrorMessage, recordSwitch, undoSwitch, type Comparison, type SwitchRecord } from "./api/client";
+import { apiErrorMessage, recordSwitch, undoSwitch, type Comparison, type PlanOption, type SwitchRecord } from "./api/client";
 import { money } from "./format";
 
 interface Props {
@@ -36,6 +36,49 @@ function ComparisonView({ comparison, kind, refId, switchRecord, children, foote
       setBusy(false);
     }
   };
+
+  const seatPlans = comparison.options.filter((o) => o.pricing === "seat");
+  const apiPlans = comparison.options.filter((o) => o.pricing === "token");
+
+  const row = (o: PlanOption) => (
+    <li
+      key={o.plan_id}
+      className="border-b border-line/60 py-3 px-2 -mx-2"
+      style={o.plan_id === rec.plan_id ? { background: "rgba(31,111,84,0.08)" } : undefined}
+    >
+      <div className="flex items-baseline justify-between gap-4">
+        <p className="text-sm">
+          {o.product}
+          {o.plan_id === rec.plan_id && <span className="ml-2 font-mono text-xs text-verified">BEST</span>}
+          {o.is_current_vendor && <span className="ml-2 font-mono text-xs text-mute">current vendor</span>}
+        </p>
+        <p className="font-mono text-sm whitespace-nowrap">{money(o.monthly_cents)}<span className="text-mute text-xs">/mo</span></p>
+      </div>
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 mt-1 font-mono text-xs">
+        <p className="text-mute">
+          {o.tier === "low" ? "lower tier" : "premium tier"}
+          {o.pricing === "seat" && o.fit !== "ok" ? ` · ${o.fit}` : ""}
+          {" · "}
+          <a href={o.official_url} target="_blank" rel="noreferrer" className="underline decoration-line hover:decoration-ink"
+            style={{ color: o.confidence === "official" ? "#1F6F54" : "#B8860B" }}>
+            {o.confidence === "official" ? "official price" : "third-party price"}
+          </a>
+        </p>
+        <p className="flex items-baseline gap-3">
+          <span style={{ color: o.savings_cents > 0 ? "#1F6F54" : "#B33A3A" }}>
+            {o.savings_cents > 0 ? `save ${money(o.savings_cents)}` : `+${money(-o.savings_cents)}`}
+          </span>
+          {switched?.plan_id === o.plan_id ? (
+            <span className="text-verified">switched ✓</span>
+          ) : (
+            <button onClick={() => change(o.plan_id)} disabled={busy} className="text-mute underline hover:text-ink">
+              I switched
+            </button>
+          )}
+        </p>
+      </div>
+    </li>
+  );
 
   return (
     <div>
@@ -83,61 +126,21 @@ function ComparisonView({ comparison, kind, refId, switchRecord, children, foote
       {children}
 
       <section className="mb-10">
-        <h3 className="text-sm uppercase tracking-wide text-mute mb-3 border-b border-line pb-2">
-          Same usage, every {comparison.category} plan
+        <h3 className="text-sm uppercase tracking-wide text-mute mb-1 border-b border-line pb-2">
+          Same seats, every {comparison.category} plan
         </h3>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-xs uppercase tracking-wide text-mute border-b border-line">
-                <th className="py-2 font-normal">Plan</th>
-                <th className="font-normal">Billing</th>
-                <th className="font-normal text-right">Per month</th>
-                <th className="font-normal text-right">vs today</th>
-                <th className="font-normal pl-4">Fit</th>
-                <th className="font-normal">Price</th>
-                <th className="font-normal" />
-              </tr>
-            </thead>
-            <tbody className="font-mono text-xs">
-              {comparison.options.map((o) => (
-                <tr
-                  key={o.plan_id}
-                  className="border-b border-line/60"
-                  style={o.plan_id === rec.plan_id ? { background: "rgba(31,111,84,0.08)" } : undefined}
-                >
-                  <td className="py-3 font-sans text-sm">
-                    {o.product}
-                    {o.plan_id === rec.plan_id && <span className="ml-2 font-mono text-xs text-verified">BEST</span>}
-                    {o.is_current_vendor && <span className="ml-2 font-mono text-xs text-mute">current vendor</span>}
-                  </td>
-                  <td className="text-mute">{o.pricing === "seat" ? `per seat · ${o.tier}` : `per token · ${o.tier}`}</td>
-                  <td className="text-right">{money(o.monthly_cents)}</td>
-                  <td className="text-right" style={{ color: o.savings_cents > 0 ? "#1F6F54" : "#B33A3A" }}>
-                    {o.savings_cents > 0 ? `−${money(o.savings_cents)}` : `+${money(-o.savings_cents)}`}
-                  </td>
-                  <td className="pl-4 text-mute">{o.fit}</td>
-                  <td>
-                    <a href={o.official_url} target="_blank" rel="noreferrer" className="underline decoration-line hover:decoration-ink"
-                      style={{ color: o.confidence === "official" ? "#1F6F54" : "#B8860B" }}>
-                      {o.confidence}
-                    </a>
-                  </td>
-                  <td className="text-right pl-3">
-                    {switched?.plan_id === o.plan_id ? (
-                      <span className="text-verified">switched ✓</span>
-                    ) : (
-                      <button onClick={() => change(o.plan_id)} disabled={busy} className="text-mute underline hover:text-ink">
-                        I switched
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <ul>{seatPlans.map(row)}</ul>
       </section>
+
+      {apiPlans.length > 0 && (
+        <details className="mb-10 group">
+          <summary className="cursor-pointer text-sm uppercase tracking-wide text-mute border-b border-line pb-2 list-none">
+            <span className="group-open:hidden">▸</span><span className="hidden group-open:inline">▾</span> Pay-per-token APIs ({apiPlans.length})
+            <span className="normal-case tracking-normal"> · needs your own app or API client</span>
+          </summary>
+          <ul>{apiPlans.map(row)}</ul>
+        </details>
+      )}
 
       {footer}
 

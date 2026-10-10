@@ -23,7 +23,7 @@ function BillReport({ result }: { result: BillResult }) {
       }
     >
       <div className="grid grid-cols-2 md:grid-cols-4 mb-10 gap-y-6">
-        <Stat label="Current spend / month" value={money(comparison.current_monthly_cents)}
+        <Stat label="Spend / month" value={money(comparison.current_monthly_cents)}
           note={comparison.current_basis === "list_price" ? "estimated from list price" : `projected from ${report.period_days} day(s)`} />
         <Stat label="Seats" value={String(report.seats)} note={`${report.underused_seats.length} underused`} />
         <Stat label="Cost per seat (bill)" value={money(report.cost_per_seat_cents)} note={`${report.events} events`} />

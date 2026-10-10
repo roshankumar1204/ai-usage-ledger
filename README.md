@@ -26,10 +26,6 @@ The first 2 analyses per team (bills or plan entries) are free; sample bills are
 
 Catalog prices carry `confidence`: `official` (read from the vendor's page) or `third-party` (2026 pricing guides; re-check `official_url`). Update `catalog.json` and its `as_of` date when vendors change prices.
 
-## Live ingestion via UI
-
-Beyond the Swagger-only flow, the dashboard itself has an upload panel — one drop zone per vendor (ChatGPT `.json`, Copilot `.csv`, Cursor `.jsonl`). Selecting a file posts directly to `/ingest/{source}` and the dashboard's stats, chart, and ledger refresh automatically on success — no Swagger or curl needed for the demo.
-
 ## The problem
 
 Organizations using multiple AI tools end up with usage and cost data scattered across vendors, each with its own export format, billing cadence, and quirks. Getting one trustworthy number — "how much are we spending, on what, by whom" — means solving several hard problems at once:
@@ -87,8 +83,10 @@ test_replay.py            # structural assertions + regression snapshots
 frontend/
     src/
       api/client.ts             # typed API client, no hardcoded URLs (env-driven)
-      App.tsx                   # dashboard layout: stats, cost-by-tool chart, ledger table
-      IngestPanel.tsx           # file upload UI per vendor, wired to /ingest/{source}
+      App.tsx                   # page shell: header, pitch, compare flow, footer
+      CompareFlow.tsx           # pick tool -> upload bill / enter plan -> report
+      ComparisonView.tsx        # recommendation, plan list, "I switched" tracking
+      BillReport.tsx            # per-bill stats, findings, spend breakdowns
       index.css                 # design tokens (Tailwind v4 @theme)
 
 ## Tech stack
@@ -105,7 +103,6 @@ frontend/
 - Tailwind CSS v4 (CSS-native `@theme` tokens, no JS config file)
 - TanStack Query (`@tanstack/react-query`) — data fetching/caching
 - Axios — HTTP client
-- Recharts — cost-by-tool chart
 
 All config (API base URL, DB connection string) is environment-driven — nothing hardcoded.
 
@@ -158,7 +155,7 @@ Dashboard: `http://localhost:5173`
 ## Demo flow
 
 1. Ingest all three vendor fixtures via Swagger (`/ingest/chatgpt`, `/ingest/copilot`, `/ingest/cursor`)
-2. Open the dashboard — same numbers reflected in stat strip, chart, and ledger table from one metrics layer
+2. Open the app, pick a tool and upload a bill (or try a sample) to get the report and plan comparison
 3. **Dedup**: re-ingest the same file — `inserted` stays 0, no duplicate rows
 4. **Late-cost backfill**: ingest a follow-up payload with the same `dedup_key` but cost now filled in — existing row updates in place, doesn't duplicate
 5. **Drift detection**: ingest a payload with a renamed/missing field for an already-baselined vendor — response includes `"status": "DRIFT_DETECTED"` instead of silently nulling the field
