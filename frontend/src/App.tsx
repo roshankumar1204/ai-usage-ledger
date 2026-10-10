@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { fetchActiveUsers, fetchCostByTool, fetchEvents } from "./api/client";
-import IngestPanel from "./IngestPanel";
 import ColdStartBanner from "./ColdStartBanner";
 import { useState } from "react";
 import HowItWorks from "./HowItWorks";
@@ -64,7 +63,7 @@ function App() {
     ● first 2 bill analyses free
   </p>
   <h2 className="font-display text-2xl font-semibold mb-3 max-w-2xl leading-snug">
-    Is your team overpaying for AI? Upload a bill and find out in a minute.
+    Is your team overpaying for AI? Upload a bill, or just name your plan, and find out in a minute.
   </h2>
   <p className="text-sm text-mute max-w-xl leading-relaxed">
     We read your ChatGPT, Copilot or Cursor usage export, show where the money goes,
@@ -74,7 +73,6 @@ function App() {
 </section>
       <CompareFlow />
      <DriftDemo />
-      <IngestPanel />
 
       {/* Stat strip — hairline-divided, not cards */}
       <div className="grid grid-cols-3 mb-12">
@@ -118,7 +116,7 @@ function App() {
       {/* Ledger table */}
       <section>
         <div className="flex items-center justify-between border-b border-line pb-2 mb-4">
-          <h2 className="text-sm uppercase tracking-wide text-mute">Ledger</h2>
+          <h2 className="text-sm uppercase tracking-wide text-mute">Your team's ledger</h2>
           <input
             type="text"
             placeholder="search user, tool, or source…"
@@ -179,7 +177,7 @@ function App() {
             </table>
             {filteredEvents?.length === 0 && (
               <p className="font-mono text-xs text-mute py-6 text-center">
-                No matching events.
+                {events?.length ? "No matching events." : "Nothing here yet. Analyze a bill above and its events show up here (only your team sees them)."}
               </p>
             )}
           </>

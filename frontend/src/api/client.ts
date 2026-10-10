@@ -55,29 +55,52 @@ export const checkHealth = async (): Promise<boolean> => {
 };
 // ---------- Bill compare (Phase 1) ----------
 
-// No accounts yet: each browser gets a random team id that scopes its bills and free quota
+// No accounts yet: each browser gets a random team id that scopes its bills and free quota.
+// Opening a share link (?team=<id>) joins that team on this device.
 const TEAM_KEY = "ai-bill-team-id";
+const TEAM_ID_RE = /^[A-Za-z0-9-]{8,64}$/;
 let memoryTeamId: string | null = null;
-export const getTeamId = (): string => {
+
+const teamFromUrl = (): string | null => {
+  const url = new URL(window.location.href);
+  const id = url.searchParams.get("team");
+  if (!id || !TEAM_ID_RE.test(id)) return null;
+  url.searchParams.delete("team");
+  window.history.replaceState(null, "", url.toString());
+  return id;
+};
+
+const resolveTeamId = (): string => {
+  const shared = teamFromUrl();
   try {
+    if (shared) localStorage.setItem(TEAM_KEY, shared);
     const saved = localStorage.getItem(TEAM_KEY);
     if (saved) return saved;
     const fresh = crypto.randomUUID();
     localStorage.setItem(TEAM_KEY, fresh);
     return fresh;
   } catch {
-    memoryTeamId ??= crypto.randomUUID();
+    memoryTeamId ??= shared ?? crypto.randomUUID();
     return memoryTeamId;
   }
 };
 
-const teamHeaders = () => ({ "X-Team-Id": getTeamId() });
+const teamId = resolveTeamId();
+export const getTeamId = () => teamId;
+export const teamShareLink = () => `${window.location.origin}${window.location.pathname}?team=${teamId}`;
+
+api.interceptors.request.use((config) => {
+  config.headers.set("X-Team-Id", teamId);
+  return config;
+});
 
 export interface TeamQuota {
   plan: "free" | "paid";
   free_limit: number;
   used: number;
   remaining: number | null;
+  switches: number;
+  monthly_savings_cents: number;
 }
 
 export interface Bill {
@@ -131,7 +154,7 @@ export interface PlanOption {
 export interface Comparison {
   category: string;
   current_monthly_cents: number;
-  current_basis: "bill" | "list_price";
+  current_basis: "bill" | "list_price" | "entered";
   monthly_tokens: number;
   seats: number;
   confidence: "low" | "normal";
@@ -141,36 +164,101 @@ export interface Comparison {
   recommendation: { plan_id: string | null; headline: string; savings_cents: number; api_tip?: string };
 }
 
+export interface SwitchRecord {
+  kind: "bill" | "manual";
+  ref_id: number;
+  plan_id: string;
+  from_monthly_cents: number;
+  to_monthly_cents: number;
+}
+
 export interface BillResult {
   bill: Bill;
   report: BillReport;
   comparison: Comparison | null;
+  switch: SwitchRecord | null;
 }
 
+export interface ManualCompare {
+  id: number;
+  plan_id: string;
+  seats: number;
+  monthly_spend_cents: number | null;
+  created_at: string;
+}
+
+export interface ManualResult {
+  manual: ManualCompare;
+  comparison: Comparison;
+  switch: SwitchRecord | null;
+}
+
+export interface CatalogPlan {
+  id: string;
+  vendor: string;
+  product: string;
+  category: "assistant" | "coding";
+  pricing: "seat" | "token";
+  tier: "low" | "high";
+  monthly_cents?: number;
+}
+
+export const fetchCatalog = async (): Promise<{ as_of: string; plans: CatalogPlan[] }> => {
+  const { data } = await api.get("/pricing/catalog");
+  return data;
+};
+
+export const createManualCompare = async (
+  body: { plan_id: string; seats: number; monthly_spend_cents?: number },
+): Promise<ManualResult> => {
+  const { data } = await api.post("/compare/manual", body);
+  return data;
+};
+
+export const fetchManualCompares = async (): Promise<ManualCompare[]> => {
+  const { data } = await api.get("/compare/manual");
+  return data;
+};
+
+export const fetchManualCompare = async (id: number): Promise<ManualResult> => {
+  const { data } = await api.get(`/compare/manual/${id}`);
+  return data;
+};
+
+export const recordSwitch = async (kind: "bill" | "manual", refId: number, planId: string) => {
+  const { data } = await api.post("/switches", { kind, ref_id: refId, plan_id: planId });
+  return data;
+};
+
+export const undoSwitch = async (kind: "bill" | "manual", refId: number) => {
+  const { data } = await api.delete(`/switches/${kind}/${refId}`);
+  return data;
+};
+
 export const fetchTeam = async (): Promise<TeamQuota> => {
-  const { data } = await api.get("/team", { headers: teamHeaders() });
+  const { data } = await api.get("/team");
   return data;
 };
 
 export const fetchBills = async (): Promise<Bill[]> => {
-  const { data } = await api.get("/bills", { headers: teamHeaders() });
+  const { data } = await api.get("/bills");
   return data;
 };
 
 export const fetchBill = async (id: number): Promise<BillResult> => {
-  const { data } = await api.get(`/bills/${id}`, { headers: teamHeaders() });
+  const { data } = await api.get(`/bills/${id}`);
   return data;
 };
 
 export const uploadBill = async (source: string, file: File): Promise<BillResult> => {
   const formData = new FormData();
   formData.append("file", file);
-  const { data } = await api.post(`/bills/${source}`, formData, { headers: teamHeaders() });
+  const { data } = await api.post(`/bills/${source}`, formData);
   return data;
 };
 
 export const uploadSampleBill = async (source: string): Promise<BillResult> => {
-  const { data } = await api.post(`/bills/${source}/sample`, null, { headers: teamHeaders() });
+  const { data } = await api.post(`/bills/${source}/sample`, null);
   return data;
 };
 

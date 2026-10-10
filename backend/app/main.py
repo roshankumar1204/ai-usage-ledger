@@ -5,8 +5,8 @@ from app.db import engine, get_session
 from app.models.canonical_event import AIUsageEvent
 from app.ingest import ingest_batch, PARSERS
 from app.drift_detector import check_drift, flatten_keys
-from app.models.bill import Team, Bill, BillEvent  # noqa: F401 (registers tables)
-from app.bills import router as bills_router
+from app.models.bill import Team, Bill, BillEvent, ManualCompare, SwitchDecision  # noqa: F401 (registers tables)
+from app.bills import get_team, router as bills_router, team_event_keys
 import json
 
 app = FastAPI(title="AI Usage Ledger")
@@ -50,24 +50,29 @@ async def ingest(source: str, file: UploadFile = File(...), session: Session = D
     result["drift"] = drift
     return result
 
-# ---------- METRICS (single source of truth) ----------
+# ---------- METRICS (single source of truth, scoped to the caller's team) ----------
 @app.get("/metrics/active-users")
-def active_users(session: Session = Depends(get_session)):
-    stmt = select(func.count(func.distinct(AIUsageEvent.user_email)))
+def active_users(team: Team = Depends(get_team), session: Session = Depends(get_session)):
+    stmt = select(func.count(func.distinct(AIUsageEvent.user_email))).where(AIUsageEvent.dedup_key.in_(team_event_keys(team)))
     return {"active_users_this_week": session.exec(stmt).one()}
 
 @app.get("/metrics/cost-by-tool")
-def cost_by_tool(session: Session = Depends(get_session)):
+def cost_by_tool(team: Team = Depends(get_team), session: Session = Depends(get_session)):
     stmt = (
         select(AIUsageEvent.tool_name, func.sum(AIUsageEvent.cost_cents))
+        .where(AIUsageEvent.dedup_key.in_(team_event_keys(team)))
         .group_by(AIUsageEvent.tool_name)
     )
     rows = session.exec(stmt).all()
     return [{"tool": t, "cost_cents": c or 0} for t, c in rows]
 
 @app.get("/metrics/events")
-def list_events(session: Session = Depends(get_session)):
-    stmt = select(AIUsageEvent).order_by(AIUsageEvent.occurred_at.desc()).limit(50)
+def list_events(team: Team = Depends(get_team), session: Session = Depends(get_session)):
+    stmt = (
+        select(AIUsageEvent)
+        .where(AIUsageEvent.dedup_key.in_(team_event_keys(team)))
+        .order_by(AIUsageEvent.occurred_at.desc()).limit(50)
+    )
     return session.exec(stmt).all()
 
 @app.get("/status")

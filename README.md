@@ -9,14 +9,19 @@ Teams upload an AI bill (ChatGPT JSON, Copilot CSV, Cursor JSONL) and get:
 - **A per-bill report**: spend, seats, cost per seat, underused seats, premium-model share, and people who appear on more than one AI bill.
 - **A comparison**: the same usage re-priced on every plan in `backend/app/pricing/catalog.json` (OpenAI, Anthropic, Google, GitHub, Cursor; a low and a high tier each, seat plans and APIs), with a recommendation and the assumptions behind it.
 
-The first 2 analyses per team are free; sample bills are always free. There are no accounts yet: the browser generates a team id sent as `X-Team-Id`.
+No export? A team can just pick its current plan and seat count (optionally what it really pays) and get the same comparison. After acting on a recommendation, "I switched" records the switch with savings computed server-side, and the header shows the running monthly savings.
+
+The first 2 analyses per team (bills or plan entries) are free; sample bills are always free. There are no accounts yet: the browser generates a team id sent as `X-Team-Id`. "Share with your team" copies a link (`?team=<id>`) that opens the same workspace on another device; anyone with the link can see the team's bills. The dashboard and ledger (`/metrics/*`) only show events from the caller's own bills.
 
 | Endpoint | Purpose |
 |---|---|
 | `POST /bills/{source}` | Upload a bill → report + comparison (402 once the free quota is used) |
 | `POST /bills/{source}/sample` | Same, using a built-in sample bill |
 | `GET /bills`, `GET /bills/{id}` | The team's bills and a bill's report |
-| `GET /team` | Plan and free analyses left |
+| `POST /compare/manual` | Compare from `{plan_id, seats, monthly_spend_cents?}`, no file |
+| `GET /compare/manual`, `GET /compare/manual/{id}` | The team's plan entries and a comparison |
+| `POST /switches`, `DELETE /switches/{kind}/{ref_id}` | Record or undo "I switched to plan X" |
+| `GET /team` | Plan, free analyses left, switches and monthly savings |
 | `GET /pricing/catalog` | The pricing catalog |
 
 Catalog prices carry `confidence`: `official` (read from the vendor's page) or `third-party` (2026 pricing guides; re-check `official_url`). Update `catalog.json` and its `as_of` date when vendors change prices.
