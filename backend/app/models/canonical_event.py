@@ -1,5 +1,5 @@
 from sqlmodel import SQLModel, Field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 class AIUsageEvent(SQLModel, table=True):
@@ -14,4 +14,4 @@ class AIUsageEvent(SQLModel, table=True):
     cost_cents: Optional[int] = None                     # nullable on purpose — backfilled later
     tokens: Optional[int] = None
     raw_payload: str                                     # original JSON, for audit/debug
-    ingested_at: datetime = Field(default_factory=datetime.utcnow)
+    ingested_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

@@ -1,0 +1,20 @@
+[
+  {
+    "id": "cgpt_001",
+    "email": "alice@company.com",
+    "model": "gpt-4o",
+    "type": "chat_message",
+    "created": "2026-06-15T10:30:00Z",
+    "usage": { "total_tokens": 1450 },
+    "cost_usd": 0.42
+  },
+  {
+    "id": "cgpt_002",
+    "email": "bob@company.com",
+    "model": "gpt-4o-mini",
+    "type": "chat_message",
+    "created": "2026-06-15T11:00:00Z",
+    "usage": { "total_tokens": 320 },
+    "cost_usd": null
+  }
+]

@@ -6,6 +6,7 @@ import ColdStartBanner from "./ColdStartBanner";
 import { useState } from "react";
 import HowItWorks from "./HowItWorks";
 import DriftDemo from "./DriftDemo";
+import CompareFlow from "./CompareFlow";
 
 function App() {
   const [search, setSearch] = useState("");
@@ -60,17 +61,18 @@ function App() {
       </header>
 <section className="mb-12 pb-8 border-b border-line">
   <p className="font-mono text-xs text-verified uppercase tracking-wide mb-3">
-    ● live demo — real backend, real data
+    ● first 2 bill analyses free
   </p>
   <h2 className="font-display text-2xl font-semibold mb-3 max-w-2xl leading-snug">
-    One trustworthy number for what your org actually spends on AI.
+    Is your team overpaying for AI? Upload a bill and find out in a minute.
   </h2>
   <p className="text-sm text-mute max-w-xl leading-relaxed">
-    A working pipeline that ingests usage data from multiple AI tools, removes
-    duplicates, catches it when a vendor silently changes their data format, and
-    resolves identities only when it can prove them.
+    We read your ChatGPT, Copilot or Cursor usage export, show where the money goes,
+    and re-price the same usage on every plan from the top AI vendors, so you can
+    see who is cheapest for the way your team actually works.
   </p>
 </section>
+      <CompareFlow />
      <DriftDemo />
       <IngestPanel />
 

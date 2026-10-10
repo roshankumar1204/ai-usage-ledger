@@ -1,13 +1,13 @@
 from sqlmodel import SQLModel, Field
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timezone
 
 class Identity(SQLModel, table=True):
     """A resolved human. Created only when we have a proof-backed anchor (email)."""
     id: Optional[int] = Field(default=None, primary_key=True)
     primary_email: str = Field(index=True, unique=True)
     display_name: Optional[str] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class IdentityEdge(SQLModel, table=True):
@@ -20,4 +20,4 @@ class IdentityEdge(SQLModel, table=True):
     raw_identifier: str = Field(index=True)          # e.g. the email string from the event
     proof_type: str                                   # "exact_email_match" | "sso_verified" | etc
     source: str                                        # which vendor this identifier came from
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

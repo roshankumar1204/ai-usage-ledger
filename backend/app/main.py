@@ -5,6 +5,8 @@ from app.db import engine, get_session
 from app.models.canonical_event import AIUsageEvent
 from app.ingest import ingest_batch, PARSERS
 from app.drift_detector import check_drift, flatten_keys
+from app.models.bill import Team, Bill, BillEvent  # noqa: F401 (registers tables)
+from app.bills import router as bills_router
 import json
 
 app = FastAPI(title="AI Usage Ledger")
@@ -15,6 +17,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(bills_router)
 
 @app.on_event("startup")
 def on_startup():
