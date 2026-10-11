@@ -1,4 +1,4 @@
-"""Re-prices one bill's usage under every catalog plan in the same category."""
+"""Re-prices a team's usage (from a bill, or from the plan they say they're on) under every catalog plan."""
 from app.pricing.catalog import SOURCE_PROFILE, load_catalog
 
 DAYS_PER_MONTH = 30
@@ -41,11 +41,35 @@ def compare_bill(source: str, report: dict) -> dict:
         reasons.append(f"Only {days} day(s) of data; monthly figures are projected and may be off.")
     if report["pending_cost_events"]:
         reasons.append("Some costs are still pending, so current spend is understated.")
+    return compare_usage(profile["category"], profile["vendor"], seats, monthly_tokens, current, current_basis, reasons)
 
+
+def compare_manual(plan_id: str, seats: int, monthly_spend_cents: int | None = None) -> dict:
+    """No export: the team tells us which seat plan they're on, how many seats, and optionally what they pay."""
+    plan = find_plan(plan_id)
+    if not plan or plan["pricing"] != "seat":
+        raise ValueError(f"Unknown seat plan '{plan_id}'")
+    if monthly_spend_cents is None:
+        current, basis = seats * plan["monthly_cents"], "list_price"
+        reasons = [f"Current spend estimated as {seats} \u00d7 {plan['product']} list price."]
+    else:
+        current, basis, reasons = monthly_spend_cents, "entered", []
+    result = compare_usage(plan["category"], plan["vendor"], seats, 0, current, basis, reasons)
+    result["current_plan_id"] = plan_id
+    return result
+
+
+def find_plan(plan_id: str) -> dict | None:
+    return next((p for p in load_catalog()["plans"] if p["id"] == plan_id), None)
+
+
+def compare_usage(category: str, vendor: str, seats: int, monthly_tokens: float,
+                  current: int, current_basis: str, reasons: list[str]) -> dict:
+    catalog = load_catalog()
     heavy = seats and monthly_tokens / seats > HEAVY_TOKENS_PER_SEAT
     options = []
     for plan in catalog["plans"]:
-        if plan["category"] != profile["category"]:
+        if plan["category"] != category:
             continue
         if plan["pricing"] == "seat":
             cost = _seat_cost(plan, seats)
@@ -63,7 +87,7 @@ def compare_bill(source: str, report: dict) -> dict:
             "tier": plan["tier"],
             "monthly_cents": cost,
             "savings_cents": current - cost,
-            "is_current_vendor": plan["vendor"] == profile["vendor"],
+            "is_current_vendor": plan["vendor"] == vendor,
             "fit": fit,
             "confidence": plan["confidence"],
             "official_url": plan["official_url"],
@@ -87,7 +111,7 @@ def compare_bill(source: str, report: dict) -> dict:
                                      f"${cheapest_api['monthly_cents'] / 100:,.2f}/month for the same tokens.")
 
     return {
-        "category": profile["category"],
+        "category": category,
         "current_monthly_cents": current,
         "current_basis": current_basis,
         "monthly_tokens": round(monthly_tokens),
