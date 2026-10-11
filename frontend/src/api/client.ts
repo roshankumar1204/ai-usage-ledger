@@ -100,6 +100,9 @@ export interface PlanOption {
   plan_id: string;
   vendor: string;
   product: string;
+  product_type: string;
+  note: string;
+  same_kind: boolean;
   pricing: "seat" | "token";
   tier: "low" | "high";
   monthly_cents: number;
@@ -120,7 +123,16 @@ export interface Comparison {
   reasons: string[];
   assumptions: string[];
   options: PlanOption[];
-  recommendation: { plan_id: string | null; headline: string; savings_cents: number; api_tip?: string };
+  recommendation: {
+    plan_id: string | null;
+    headline: string;
+    reason: string;
+    savings_cents: number;
+    warning?: string;   // the bill itself looks wrong: shown before anything else
+    seat_tip?: string;  // savings from dropping idle seats on the current plan
+    alt_tip?: string;   // cheaper, but a different kind of product
+    api_tip?: string;   // cheaper still, if the team can use an API directly
+  };
 }
 
 export interface SwitchRecord {

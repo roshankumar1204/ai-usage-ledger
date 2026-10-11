@@ -1,6 +1,6 @@
 {
   "as_of": "2026-10-09",
-  "note": "List prices in US cents. 'official' = read from the vendor's own pricing page; 'third-party' = taken from 2026 pricing guides and should be re-checked against official_url before relying on it.",
+  "note": "List prices in US cents. 'official' = read from the vendor's own pricing page; 'third-party' = taken from 2026 pricing guides and should be re-checked against official_url before relying on it. product_type groups like-for-like products: recommendations stay within compatible types.",
   "plans": [
     {
       "id": "chatgpt-business",
@@ -13,7 +13,9 @@
       "annual_monthly_cents": 2000,
       "min_seats": 2,
       "official_url": "https://openai.com/chatgpt/pricing/",
-      "confidence": "third-party"
+      "confidence": "third-party",
+      "product_type": "chat_assistant",
+      "note": "ChatGPT workspace for teams."
     },
     {
       "id": "chatgpt-business-premium",
@@ -26,7 +28,9 @@
       "annual_monthly_cents": 10000,
       "min_seats": 2,
       "official_url": "https://openai.com/chatgpt/pricing/",
-      "confidence": "third-party"
+      "confidence": "third-party",
+      "product_type": "chat_assistant",
+      "note": "ChatGPT Business seat with higher usage limits."
     },
     {
       "id": "claude-team-standard",
@@ -39,7 +43,9 @@
       "annual_monthly_cents": 2000,
       "min_seats": 5,
       "official_url": "https://claude.com/pricing",
-      "confidence": "official"
+      "confidence": "official",
+      "product_type": "chat_assistant",
+      "note": "Claude workspace for teams."
     },
     {
       "id": "claude-team-premium",
@@ -52,7 +58,9 @@
       "annual_monthly_cents": 10000,
       "min_seats": 5,
       "official_url": "https://claude.com/pricing",
-      "confidence": "official"
+      "confidence": "official",
+      "product_type": "chat_assistant",
+      "note": "Claude Team seat with 5x the usage of a standard seat."
     },
     {
       "id": "workspace-business-standard",
@@ -65,7 +73,9 @@
       "annual_monthly_cents": 1400,
       "min_seats": 1,
       "official_url": "https://workspace.google.com/pricing",
-      "confidence": "third-party"
+      "confidence": "third-party",
+      "product_type": "office_suite",
+      "note": "Full Google Workspace suite (Gmail, Docs, Drive, Meet) with Gemini built in."
     },
     {
       "id": "gemini-enterprise-business",
@@ -78,7 +88,9 @@
       "annual_monthly_cents": 2100,
       "min_seats": 1,
       "official_url": "https://cloud.google.com/gemini-enterprise",
-      "confidence": "third-party"
+      "confidence": "third-party",
+      "product_type": "chat_assistant",
+      "note": "Google's standalone Gemini assistant for business."
     },
     {
       "id": "copilot-business",
@@ -91,7 +103,9 @@
       "annual_monthly_cents": 1900,
       "min_seats": 1,
       "official_url": "https://github.com/features/copilot/plans",
-      "confidence": "third-party"
+      "confidence": "third-party",
+      "product_type": "ide_plugin",
+      "note": "Plugs into the editors your team already uses."
     },
     {
       "id": "copilot-enterprise",
@@ -104,7 +118,9 @@
       "annual_monthly_cents": 3900,
       "min_seats": 1,
       "official_url": "https://github.com/features/copilot/plans",
-      "confidence": "third-party"
+      "confidence": "third-party",
+      "product_type": "ide_plugin",
+      "note": "Copilot Business plus enterprise features, on GitHub Enterprise Cloud."
     },
     {
       "id": "cursor-teams",
@@ -117,7 +133,9 @@
       "annual_monthly_cents": 3200,
       "min_seats": 1,
       "official_url": "https://cursor.com/pricing",
-      "confidence": "third-party"
+      "confidence": "third-party",
+      "product_type": "ai_editor",
+      "note": "A separate AI code editor: the team moves to Cursor."
     },
     {
       "id": "cursor-teams-premium",
@@ -130,7 +148,9 @@
       "annual_monthly_cents": 12000,
       "min_seats": 1,
       "official_url": "https://cursor.com/pricing",
-      "confidence": "third-party"
+      "confidence": "third-party",
+      "product_type": "ai_editor",
+      "note": "Cursor Teams seat with a larger usage allowance."
     },
     {
       "id": "openai-api-luna",
@@ -142,7 +162,9 @@
       "input_per_mtok_cents": 20,
       "output_per_mtok_cents": 120,
       "official_url": "https://openai.com/api/pricing/",
-      "confidence": "third-party"
+      "confidence": "third-party",
+      "product_type": "api",
+      "note": "Pay per token through the API; needs your own app or API client."
     },
     {
       "id": "openai-api-astra",
@@ -154,7 +176,9 @@
       "input_per_mtok_cents": 1000,
       "output_per_mtok_cents": 5000,
       "official_url": "https://openai.com/api/pricing/",
-      "confidence": "third-party"
+      "confidence": "third-party",
+      "product_type": "api",
+      "note": "Pay per token through the API; needs your own app or API client."
     },
     {
       "id": "anthropic-api-haiku",
@@ -166,7 +190,9 @@
       "input_per_mtok_cents": 10,
       "output_per_mtok_cents": 50,
       "official_url": "https://claude.com/pricing",
-      "confidence": "official"
+      "confidence": "official",
+      "product_type": "api",
+      "note": "Pay per token through the API; needs your own app or API client."
     },
     {
       "id": "anthropic-api-fable",
@@ -178,7 +204,9 @@
       "input_per_mtok_cents": 1000,
       "output_per_mtok_cents": 5000,
       "official_url": "https://claude.com/pricing",
-      "confidence": "official"
+      "confidence": "official",
+      "product_type": "api",
+      "note": "Pay per token through the API; needs your own app or API client."
     },
     {
       "id": "google-api-flash-lite",
@@ -190,7 +218,9 @@
       "input_per_mtok_cents": 30,
       "output_per_mtok_cents": 250,
       "official_url": "https://ai.google.dev/gemini-api/docs/pricing",
-      "confidence": "third-party"
+      "confidence": "third-party",
+      "product_type": "api",
+      "note": "Pay per token through the API; needs your own app or API client."
     },
     {
       "id": "google-api-pro",
@@ -202,7 +232,9 @@
       "input_per_mtok_cents": 200,
       "output_per_mtok_cents": 1200,
       "official_url": "https://ai.google.dev/gemini-api/docs/pricing",
-      "confidence": "third-party"
+      "confidence": "third-party",
+      "product_type": "api",
+      "note": "Pay per token through the API; needs your own app or API client."
     }
   ]
 }

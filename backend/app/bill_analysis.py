@@ -53,10 +53,14 @@ def analyze_bill(events: list[AIUsageEvent], other_tools_by_user: dict[str, set[
             overlap[user] = sorted(others)
 
     findings = []
-    if pending:
+    if pending == len(events):
+        findings.append("This export has no per-message costs, which is normal for seat-billed plans; "
+                        "spend is estimated from the plan's list price.")
+    elif pending:
         findings.append(f"{pending} of {len(events)} events have no cost yet (billing data arrives later); totals will rise when it does.")
     if underused:
-        findings.append(f"{len(underused)} of {seats} seats use under {int(UNDERUSED_SHARE * 100)}% of the average seat's tokens: {', '.join(underused)}.")
+        verb = "uses" if len(underused) == 1 else "use"
+        findings.append(f"{len(underused)} of {seats} seats {verb} under {int(UNDERUSED_SHARE * 100)}% of the average seat's tokens: {', '.join(underused)}.")
     if total_cost and premium_cost:
         findings.append(f"{round(100 * premium_cost / total_cost)}% of spend goes to premium-tier models.")
     if overlap:

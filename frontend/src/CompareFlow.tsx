@@ -166,7 +166,7 @@ function CompareFlow() {
       {step === "report" && result && (
         <div>
           <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-            <p className="font-mono text-xs text-mute break-all">
+            <p className="font-mono text-xs text-mute break-words min-w-0">
               {result.kind === "bill"
                 ? `${result.data.bill.filename} · ${result.data.report.period_days} day(s) · ${result.data.bill.event_count} events`
                 : `${planName(result.data.manual.plan_id)} · ${result.data.manual.seats} seats`}
