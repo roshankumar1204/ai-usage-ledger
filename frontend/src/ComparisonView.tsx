@@ -51,9 +51,11 @@ function ComparisonView({ comparison, kind, refId, switchRecord, children, foote
           {o.product}
           {o.plan_id === rec.plan_id && <span className="ml-2 font-mono text-xs text-verified">BEST</span>}
           {o.is_current_vendor && <span className="ml-2 font-mono text-xs text-mute">current vendor</span>}
+          {o.pricing === "seat" && !o.same_kind && <span className="ml-2 font-mono text-xs text-pending">different kind of product</span>}
         </p>
         <p className="font-mono text-sm whitespace-nowrap">{money(o.monthly_cents)}<span className="text-mute text-xs">/mo</span></p>
       </div>
+      <p className="text-xs text-mute mt-1">{o.note}</p>
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 mt-1 font-mono text-xs">
         <p className="text-mute">
           {o.tier === "low" ? "lower tier" : "premium tier"}
@@ -86,12 +88,22 @@ function ComparisonView({ comparison, kind, refId, switchRecord, children, foote
         className="border p-5 mb-8"
         style={{ borderColor: rec.plan_id ? "#1F6F54" : "#E3E0D8", background: rec.plan_id ? "rgba(31,111,84,0.05)" : undefined }}
       >
+        {rec.warning && (
+          <p className="border border-alert text-alert text-sm px-3 py-2 mb-4">⚠ {rec.warning}</p>
+        )}
         <p className="font-mono text-xs uppercase tracking-wide text-mute mb-1">Recommendation</p>
         <p className="font-display text-xl font-semibold leading-snug">{rec.headline}</p>
-        {rec.api_tip && <p className="text-sm text-mute mt-2">{rec.api_tip}</p>}
+        <p className="text-sm mt-2">{rec.reason}</p>
+        {(rec.seat_tip || rec.alt_tip || rec.api_tip) && (
+          <ul className="text-sm text-mute mt-3 space-y-1.5">
+            {rec.seat_tip && <li><span className="text-ink">Quick win:</span> {rec.seat_tip}</li>}
+            {rec.alt_tip && <li><span className="text-ink">Cheaper, different product:</span> {rec.alt_tip}</li>}
+            {rec.api_tip && <li><span className="text-ink">Using the API directly:</span> {rec.api_tip}</li>}
+          </ul>
+        )}
         {comparison.confidence === "low" && (
           <ul className="mt-3 text-xs text-pending space-y-1">
-            {comparison.reasons.map((r) => (
+            {comparison.reasons.filter((r) => r !== rec.warning).map((r) => (
               <li key={r}>⚠ {r}</li>
             ))}
           </ul>

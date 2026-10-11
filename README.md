@@ -1,110 +1,150 @@
 # AI Usage Ledger
 
-A reconciliation pipeline for AI tool usage and spend across an organization. Pulls usage data from multiple AI vendors (ChatGPT, GitHub Copilot, Cursor) into one canonical event format, then surfaces clean, trustworthy metrics — solving for the real-world mess of incompatible schemas, duplicate deliveries, late-arriving billing data, and silent schema drift.
+Find out whether your team is overpaying for AI. Upload a ChatGPT, GitHub Copilot or Cursor usage export (or just name the plan you're on), and the app re-prices your team's actual usage on every comparable plan from the top AI vendors, tells you which one fits best, and why.
 
-## Bill compare (Phase 1)
+The first 2 analyses per team are free. Sample bills are always free.
 
-Teams upload an AI bill (ChatGPT JSON, Copilot CSV, Cursor JSONL) and get:
+## How it works
 
-- **A per-bill report**: spend, seats, cost per seat, underused seats, premium-model share, and people who appear on more than one AI bill.
-- **A comparison**: the same usage re-priced on every plan in `backend/app/pricing/catalog.json` (OpenAI, Anthropic, Google, GitHub, Cursor; a low and a high tier each, seat plans and APIs), with a recommendation and the assumptions behind it.
+### 1. Add a bill, or name your plan
 
-No export? A team can just pick its current plan and seat count (optionally what it really pays) and get the same comparison. After acting on a recommendation, "I switched" records the switch with savings computed server-side, and the header shows the running monthly savings.
+| You have | What you do | What the app knows |
+|---|---|---|
+| A usage export (ChatGPT `.json`, Copilot `.csv`, Cursor `.jsonl`) | Pick the tool, upload the file | Who used it, when, which models, tokens, and cost per event if the export has it |
+| No export | Pick your current plan, enter seats, optionally what you really pay | Seats and current spend only |
+| Nothing yet | Click "try a sample bill" | A small built-in example; doesn't use a free analysis |
 
-The first 2 analyses per team (bills or plan entries) are free; sample bills are always free. There are no accounts yet: the browser generates a team id sent as `X-Team-Id`. "Share with your team" copies a link (`?team=<id>`) that opens the same workspace on another device; anyone with the link can see the team's bills. The dashboard and ledger (`/metrics/*`) only show events from the caller's own bills.
+Uploaded files go through the ingest pipeline (see [Under the hood](#under-the-hood)): parsed into one common event shape, de-duplicated, and stored. Only usage counts and costs are kept, never prompts or conversations.
+
+### 2. The bill report
+
+For an uploaded bill the app works out:
+
+- **Spend per month**: the bill's total, projected to 30 days if the bill covers fewer.
+- **Seats**: distinct people on the bill, and cost per seat.
+- **Underused seats**: anyone using under 20% of the average person's tokens.
+- **Premium-model share**: how much of the spend goes to top-tier models (ChatGPT bills only; Copilot and Cursor exports don't name models).
+- **Overlap**: people who also show up on the team's other AI bills, i.e. paid for twice.
+- **Seat-billed vs usage-billed**: an export with no per-message costs is treated as a seat plan, and current spend is estimated from the plan's list price.
+
+### 3. The comparison
+
+The same usage is re-priced on every plan in the pricing catalog (`backend/app/pricing/catalog.json`), which covers OpenAI, Anthropic, Google, GitHub and Cursor with a lower and a premium tier each:
+
+- **Seat plans**: seats × monthly price, never below the plan's minimum seat count (the row says so when a minimum applies).
+- **Pay-per-token APIs**: monthly tokens × list rate, assuming 75% input and 25% output tokens. Shown in a separate, collapsed list, since they need your own app or API client.
+- **Fit**: low-tier seat plans are flagged "may hit usage caps" above roughly 2M tokens per seat per month.
+
+### 4. How the recommendation is chosen
+
+1. **Only like-for-like products are recommended.** Every plan has a product type: chat assistant, office suite with AI, coding assistant (IDE plugin or AI editor), or API. A ChatGPT bill is only matched against other chat assistants; a Copilot or Cursor bill against coding assistants.
+2. **Among those, the cheapest seat plan with no usage-cap risk wins**, if it costs less than what you pay today. The card says why ("cheapest chat assistant for 8 seats at your usage") plus a one-line note on what the product is.
+3. **Everything else is advice, not the headline:**
+   - *Quick win*: on seat-billed plans, what dropping the underused seats saves before switching anything.
+   - *Cheaper, different product*: e.g. Google Workspace is cheaper per seat than ChatGPT Business, but it's a whole office suite, so it's mentioned, never recommended in its place.
+   - *Using the API directly*: the cheapest per-token option for the same usage.
+4. **If you already pay less than every alternative**, the app says so instead of inventing a switch.
+
+### 5. Checks before you trust a number
+
+- **Implausible prices.** If a per-token bill works out to more than 3× the priciest API list rate in the catalog, the app shows a warning and **does not recommend a switch**: the file is probably wrong, and any savings figure would be too.
+- **Low confidence** is shown when the bill covers under 28 days, costs are still pending, or spend had to be estimated from list price.
+- **Price sources.** Each price is marked `official` (read from the vendor's pricing page) or `third-party` (from 2026 pricing guides) and links to the vendor page. Prices carry an "as of" date.
+
+### 6. After the report
+
+- **"I switched"** records the switch. Savings are recomputed on the server (never taken from the browser) and the header keeps a running "saving $X/mo" total. Undo is one click.
+- **Share with team** copies a link (`?team=<id>`) that opens the same workspace on another device. There are no logins yet, so anyone with the link sees the team's bills.
+- **Privacy**: each team only ever sees its own bills and events.
+- **Free tier**: 2 analyses (bill uploads or plan entries) per team; after that uploads return `402` and the Pro plan (unlimited compares, monthly monitoring, price research) is shown as coming soon.
+
+### Try it
+
+- Click **try a sample bill** in the app, or
+- Generate two realistic 30-day ChatGPT bills and upload them:
+
+  ```bash
+  cd backend && python scripts/make_test_bills.py ./test-bills
+  ```
+
+  | File | Situation | What you should see |
+  |---|---|---|
+  | `chatgpt-api-team.json` | 8 people on per-token billing, about $66/month | "You're already paying less than any other chat assistant", plus the cheaper-API tip |
+  | `chatgpt-business-seats.json` | 12-seat plan; 2 people barely use it and 1 never does | 11 seats seen (the unused one isn't in the export), a switch to the cheapest chat assistant, and a quick win for dropping the 2 idle seats |
+
+### Known limitations
+
+- **Parsers read this project's export format, not the vendors' real exports yet.** Real ChatGPT, Copilot and Cursor admin exports have different fields; adding them needs real (anonymized) sample exports.
+- **Seats with zero usage are invisible.** A usage export only lists people who used the tool, so a paid seat nobody touched won't show up. Use "No export? Just tell us your plan" with your real seat count.
+- **Price, not quality.** The comparison is about cost and product type; it doesn't judge which model is better for your work.
+- **Token split is assumed** (75% input / 25% output), since exports only give totals.
+- **Prices change.** Update `catalog.json` and its `as_of` date when vendors change pricing; `third-party` prices should be re-checked against `official_url`.
+
+## API
 
 | Endpoint | Purpose |
 |---|---|
-| `POST /bills/{source}` | Upload a bill → report + comparison (402 once the free quota is used) |
-| `POST /bills/{source}/sample` | Same, using a built-in sample bill |
-| `GET /bills`, `GET /bills/{id}` | The team's bills and a bill's report |
+| `POST /bills/{source}` | Upload a bill (`chatgpt`, `copilot`, `cursor`) → report + comparison (402 once the free quota is used) |
+| `POST /bills/{source}/sample` | Same, using a built-in sample bill (free) |
+| `GET /bills`, `GET /bills/{id}` | The team's bills and one bill's report |
 | `POST /compare/manual` | Compare from `{plan_id, seats, monthly_spend_cents?}`, no file |
-| `GET /compare/manual`, `GET /compare/manual/{id}` | The team's plan entries and a comparison |
+| `GET /compare/manual`, `GET /compare/manual/{id}` | The team's plan entries and one comparison |
 | `POST /switches`, `DELETE /switches/{kind}/{ref_id}` | Record or undo "I switched to plan X" |
 | `GET /team` | Plan, free analyses left, switches and monthly savings |
 | `GET /pricing/catalog` | The pricing catalog |
+| `GET /metrics/*` | Team-scoped usage metrics (active users, cost by tool, recent events) |
+| `POST /ingest/{source}` | Raw ingest without a bill (used by tests and the pipeline demo) |
 
-Catalog prices carry `confidence`: `official` (read from the vendor's page) or `third-party` (2026 pricing guides; re-check `official_url`). Update `catalog.json` and its `as_of` date when vendors change prices.
+Every endpoint except `/ingest`, `/pricing/catalog` and `/status` needs an `X-Team-Id` header (the frontend generates one per browser).
 
-## The problem
+## Under the hood
 
-Organizations using multiple AI tools end up with usage and cost data scattered across vendors, each with its own export format, billing cadence, and quirks. Getting one trustworthy number — "how much are we spending, on what, by whom" — means solving several hard problems at once:
+Usage and cost data arrive from each vendor in its own format and billing cadence. The ingest pipeline turns that into one trustworthy set of events:
 
-| Problem | Solution built here |
+| Problem | Solution |
 |---|---|
-| Sources arrive in incompatible shapes | One canonical `AIUsageEvent` schema; 3 vendor parsers (ChatGPT JSON export, Copilot CSV, Cursor JSONL) each converge on the same shape |
+| Sources arrive in incompatible shapes | One canonical `AIUsageEvent` schema; a parser per vendor converges on it |
 | Every source can redeliver the same event | Deterministic `dedup_key` (hash of source + raw event id), upsert-not-insert |
-| Cost data arrives late, separately from usage | Cost field is nullable on ingest; a later batch with the same dedup key patches `cost_cents` in place instead of duplicating the row |
-| A vendor changes a field and nothing throws — it just silently reads null | `drift_detector.py` baselines each vendor's key-paths on first ingest and flags missing keys on every batch after |
-| A parser fix for one vendor can silently break another | pytest replay harness runs every parser against committed fixture payloads + snapshot-asserts output didn't unexpectedly change |
-| Linking the same person across tools without guessing | `identity_resolver.py` only links a raw email to an Identity via an explicit, recorded `proof_type` — no fuzzy matching, no silent merging |
-| Different readers reporting different numbers for the same metric | Single FastAPI metrics layer (`/metrics/*`) is the only place "active users" / "cost by tool" are computed — dashboard and any future reader pull from the same source |
+| Cost data arrives late, separately from usage | `cost_cents` is nullable; a later batch with the same key fills it in place |
+| A vendor renames a field and nothing throws | `drift_detector.py` baselines each vendor's key paths and flags missing keys |
+| A parser fix for one vendor silently breaks another | pytest replay harness + output snapshots per vendor fixture |
+| Linking the same person across tools without guessing | `identity_resolver.py` links identities only with a recorded `proof_type` |
+| Remote database latency | Ingest looks up existing events in batches and each person once, not per event |
 
-**Deliberately not built** (would need infra disproportionate to a demo, covered conceptually instead): TLS interception on endpoints, browser-extension network capture, fleet-wide deployment/MDM, corpus-scale LLM classification, generic auto-detection of unknown vendor schemas (the parsers here are intentionally vendor-specific — real schema auto-detection for an arbitrary, undocumented format is itself the open-ended problem this kind of system exists to solve, not a demo-scope add-on).
+### Layout
 
-## Architecture
-
-ai-usage-ledger/
-
+```
 backend/
-
-app/
-
-models/
-
-canonical_event.py     # the one event shape every vendor maps into
-
-identity.py             # Identity + IdentityEdge (proof-backed links only)
-
-parsers/
-
-chatgpt_enterprise.py   # JSON export -> canonical shape
-
-copilot_export.py       # CSV export -> canonical shape
-
-cursor_jsonl.py         # JSONL stream -> canonical shape
-
-ingest.py                 # dedup + upsert + late-cost backfill
-
-identity_resolver.py      # proof-based identity linking
-
-drift_detector.py         # baseline + diff key-paths per vendor
-
-db.py
-
-main.py                   # FastAPI app: /ingest/{source}, /metrics/*
-
-tests/
-
-fixtures/<vendor>/        # captured sample payloads + committed output snapshots
-
-test_replay.py            # structural assertions + regression snapshots
-
+  app/
+    main.py                # FastAPI app, metrics endpoints
+    bills.py               # bills, manual compares, switches, team quota
+    bill_analysis.py       # per-bill report
+    simulator.py           # re-pricing, recommendation, sanity checks
+    pricing/catalog.json   # plans, prices, product types, sources
+    parsers/               # one parser per vendor export
+    ingest.py              # dedup + upsert + late-cost backfill
+    identity_resolver.py   # proof-based identity linking
+    drift_detector.py      # schema drift per vendor
+    models/                # SQLModel tables
+    samples/               # built-in sample bills
+  scripts/make_test_bills.py
+  tests/                   # replay, analysis, comparison and API tests
 frontend/
-    src/
-      api/client.ts             # typed API client, no hardcoded URLs (env-driven)
-      App.tsx                   # page shell: header, pitch, compare flow, footer
-      CompareFlow.tsx           # pick tool -> upload bill / enter plan -> report
-      ComparisonView.tsx        # recommendation, plan list, "I switched" tracking
-      BillReport.tsx            # per-bill stats, findings, spend breakdowns
-      index.css                 # design tokens (Tailwind v4 @theme)
+  src/
+    App.tsx                # page shell
+    CompareFlow.tsx        # pick tool -> upload bill / enter plan -> report
+    ComparisonView.tsx     # recommendation, plan list, "I switched"
+    BillReport.tsx         # per-bill stats, findings, breakdowns
+    api/client.ts          # typed API client, team id handling
+```
 
 ## Tech stack
 
-**Backend**
-- FastAPI — REST API
-- SQLModel — ORM (Pydantic + SQLAlchemy in one)
-- PostgreSQL via [Neon](https://neon.tech) — serverless, free tier, no local DB setup
-- pytest — replay/regression harness
-- python-dotenv — env config
+- **Backend:** FastAPI, SQLModel/SQLAlchemy, PostgreSQL ([Neon](https://neon.tech)), pytest. Versions are pinned in `backend/requirements.txt`.
+- **Frontend:** React + TypeScript (Vite), Tailwind CSS v4, TanStack Query, Axios.
+- **Hosting:** backend on Render (auto-deploys `main`), frontend on Vercel.
 
-**Frontend**
-- React + TypeScript (Vite)
-- Tailwind CSS v4 (CSS-native `@theme` tokens, no JS config file)
-- TanStack Query (`@tanstack/react-query`) — data fetching/caching
-- Axios — HTTP client
-
-All config (API base URL, DB connection string) is environment-driven — nothing hardcoded.
+All config (API base URL, database URL) comes from environment variables.
 
 ## Setup
 
@@ -114,23 +154,20 @@ All config (API base URL, DB connection string) is environment-driven — nothin
 cd backend
 python -m venv venv
 source venv/bin/activate        # Windows: venv\Scripts\activate
-pip install fastapi uvicorn sqlmodel psycopg2-binary pydantic python-dotenv pytest
+pip install -r requirements.txt pytest httpx
 ```
 
 Create `backend/.env`:
 
-
+```
 DATABASE_URL=postgresql://<your-neon-connection-string>
+```
 
-Run:
+Run the API (docs at `http://localhost:8000/docs`) and the tests:
+
 ```bash
 uvicorn app.main:app --reload --port 8000
-```
-Swagger docs: `http://localhost:8000/docs`
-
-Run tests:
-```bash
-pytest tests/test_replay.py -v
+pytest
 ```
 
 ### Frontend
@@ -138,31 +175,13 @@ pytest tests/test_replay.py -v
 ```bash
 cd frontend
 npm install
+echo "VITE_API_BASE_URL=http://localhost:8000" > .env
+npm run dev                     # http://localhost:5173
 ```
 
-Create `frontend/.env`:
-
-
-VITE_API_BASE_URL=http://localhost:8000
-
-
-Run:
-```bash
-npm run dev
-```
-Dashboard: `http://localhost:5173`
-
-## Demo flow
-
-1. Ingest all three vendor fixtures via Swagger (`/ingest/chatgpt`, `/ingest/copilot`, `/ingest/cursor`)
-2. Open the app, pick a tool and upload a bill (or try a sample) to get the report and plan comparison
-3. **Dedup**: re-ingest the same file — `inserted` stays 0, no duplicate rows
-4. **Late-cost backfill**: ingest a follow-up payload with the same `dedup_key` but cost now filled in — existing row updates in place, doesn't duplicate
-5. **Drift detection**: ingest a payload with a renamed/missing field for an already-baselined vendor — response includes `"status": "DRIFT_DETECTED"` instead of silently nulling the field
-6. **Add a 4th vendor live**: write one new parser file, register it in `PARSERS` dict — zero other files change, proving the canonical-event architecture holds
 ## What I'd build next
 
-- Migrations via Alembic instead of `create_all()` — additive and reversible, instead of dropping tables on schema changes
-- An audit trail table logging every write with a reason, so any number can be explained or disputed later
-- Versioned parser dispatch, so multiple schema generations of the same vendor can be handled live at once (vendors change their export format over time without warning)
-- Expanding `proof_type` beyond exact-email-match (SSO claims, verified device certs) without changing the resolver's core guarantee: never assert an identifier that can't be proven
+- Parsers for real ChatGPT, Copilot and Cursor admin exports, plus Claude and Gemini
+- Accounts and logins to replace share links
+- Price-change alerts and monthly monitoring (the Pro plan)
+- Alembic migrations instead of `create_all()`
